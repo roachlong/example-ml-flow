@@ -11,8 +11,8 @@ The process flow is very simple
 2) These will get loaded into a number of database tables
 3) Completed transactions are passed through change data capture
 4) The results of the cdc pipeline are sent to a storage bucket
-5) Files from the storage bucket are feed to an analytical platform
-6) The data is then resolved to match on an "as of" timestamp
+5) Files from the storage bucket are fed to an analytical platform
+6) The data is then merged matching on CDC resolved timestamps
 7) Which can then be transformed and used as input into an ML application
 
 <img src="https://github.com/user-attachments/assets/fae079c7-6bda-4739-88cd-a7e5651cf0b4" width="60%"/>
