@@ -15,7 +15,7 @@ The process flow is very simple
 6) The data is then merged matching on CDC resolved timestamps
 7) Which can then be transformed and used as input into an ML application
 
-<img src="https://github.com/user-attachments/assets/fae079c7-6bda-4739-88cd-a7e5651cf0b4" width="60%"/>
+<img src="https://github.com/user-attachments/assets/fae079c7-6bda-4739-88cd-a7e5651cf0b4" width="70%"/>
 
 ## Test the Flow
 You can download the repository and run the workload locally to test different scenarios and configurations that are appropriate for your own ML flow.  More information on environment setup and the steps required to run the workload can be found on our [wiki](https://github.com/roachlong/example-ml-flow/wiki) pages.
