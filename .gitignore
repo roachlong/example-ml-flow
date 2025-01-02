@@ -1,0 +1,11 @@
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+bin/
+certs/
+cockroach-data/
+data/
+my-safe-directory/
+obj/
+settings/
+venv/
