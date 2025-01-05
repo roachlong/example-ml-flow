@@ -103,7 +103,7 @@ class Transactionmac:
 
         self.records = []
         # print(f"id: {self.id} and counter: {self.counter} LOOP completed")
-        return [self.parse, self.address, self.city_loc, self.customer, self.merchant, self.transaction]
+        return [self.parse, self.transact]
 
 
 
@@ -136,27 +136,136 @@ class Transactionmac:
 
 
 
-    def address(self, conn: psycopg.Connection):
-        # print(f"id: {self.id} and counter: {self.counter} ADDRESS called")
+    def flush_address(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+        # print(f"id: {self.id} and counter: {self.counter} FLUSH_ADDRESS called")
+        if (random.randint(1, 100) <= self.update_freq):
+            resolve_it = """
+            ON CONFLICT (acct_num) DO UPDATE SET
+                street = excluded.street,
+                zip = excluded.zip,
+                lat = excluded.lat,
+                lng = excluded.lng
+            """
+            self.execute(conn, data, record_cnt, sql, resolve_it)
+        else:
+            do_nothing = "ON CONFLICT DO NOTHING"
+            self.execute(conn, data, record_cnt, sql, do_nothing)
 
-        sql = """
+
+
+    def flush_city_loc(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+        # print(f"id: {self.id} and counter: {self.counter} FLUSH_CITY_LOC called")
+        if (random.randint(1, 100) <= self.update_freq):
+            resolve_it = """
+            ON CONFLICT (zip) DO UPDATE SET
+                city = excluded.city,
+                state = excluded.state,
+                city_pop = excluded.city_pop
+            """
+            self.execute(conn, data, record_cnt, sql, resolve_it)
+        else:
+            do_nothing = "ON CONFLICT DO NOTHING"
+            self.execute(conn, data, record_cnt, sql, do_nothing)
+
+
+
+    def flush_customer(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+        # print(f"id: {self.id} and counter: {self.counter} FLUSH_CUSTOMER called")
+        if (random.randint(1, 100) <= self.update_freq):
+            resolve_it = """
+            ON CONFLICT (ssn) DO UPDATE SET
+                cc_num = excluded.cc_num,
+                first = excluded.first,
+                last = excluded.last,
+                gender = excluded.gender,
+                job = excluded.job,
+                dob = excluded.dob,
+                acct_num = excluded.acct_num,
+                profile = excluded.profile
+            """
+            self.execute(conn, data, record_cnt, sql, resolve_it)
+        else:
+            do_nothing = "ON CONFLICT DO NOTHING"
+            self.execute(conn, data, record_cnt, sql, do_nothing)
+
+
+
+    def flush_merchant(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+        # print(f"id: {self.id} and counter: {self.counter} FLUSH_MERCHANT called")
+        if (random.randint(1, 100) <= self.update_freq):
+            resolve_it = """
+            ON CONFLICT (id) DO UPDATE SET
+                merchant = excluded.merchant,
+                merch_lat = excluded.merch_lat,
+                merch_lng = excluded.merch_lng
+            """
+            self.execute(conn, data, record_cnt, sql, resolve_it)
+        else:
+            do_nothing = "ON CONFLICT DO NOTHING"
+            self.execute(conn, data, record_cnt, sql, do_nothing)
+
+
+
+    def transact(self, conn: psycopg.Connection):
+        # print(f"id: {self.id} and counter: {self.counter} TRANSACT called")
+
+        addr_sql = """
         INSERT INTO address (
             acct_num, street, zip, lat, lng
         )
         """
+        addr_cnt = 0
+        addr_data = []
+        unique_addr = []
 
+        city_sql = """
+        INSERT INTO city_loc (
+            zip, city, state, city_pop
+        )
+        """
+        city_cnt = 0
+        city_data = []
+        unique_city = []
+
+        cust_sql = """
+        INSERT INTO customer (
+            ssn, cc_num, first, last, gender, job, dob, acct_num, profile
+        )
+        """
+        cust_cnt = 0
+        cust_data = []
+        unique_cust = []
+
+        merc_sql = """
+        INSERT INTO merchant (
+            id, merchant, merch_lat, merch_lng
+        )
+        """
+        merc_cnt = 0
+        merc_data = []
+        unique_merc = []
+
+        sql = """
+        INSERT INTO transaction (
+            cc_num, trans_num, trans_date, trans_time, unix_time, category, merch_id, amt, is_fraud
+        )
+        """
         record_cnt = 0
         data = []
-        unique_list = []
-        for record in self.records:
-            acct_num = record[Field.acct_num.value]
-            if acct_num in unique_list:
-                continue
-            else:
-                unique_list.append(acct_num)
 
-            record_cnt += 1
-            data += [
+        for record in self.records:
+
+            # ADDRESS
+            acct_num = record[Field.acct_num.value]
+            if acct_num in unique_addr:
+                self.flush_address(conn, addr_data, addr_cnt, addr_sql)
+                addr_cnt = 0
+                addr_data = []
+                unique_addr = []
+                
+            unique_addr.append(acct_num)
+            addr_cnt += 1
+            addr_data += [
                 acct_num,
                 record[Field.street.value],
                 record[Field.zip.value],
@@ -164,118 +273,48 @@ class Transactionmac:
                 record[Field.lng.value]
             ]
 
-            if record_cnt >= self.batch_size:
-                if (random.randint(1, 100) <= self.update_freq):
-                    resolve_it = """
-                    ON CONFLICT (acct_num) DO UPDATE SET
-                        street = excluded.street,
-                        zip = excluded.zip,
-                        lat = excluded.lat,
-                        lng = excluded.lng
-                    """
-                    self.execute(conn, data, record_cnt, sql, resolve_it)
-                else:
-                    do_nothing = "ON CONFLICT DO NOTHING"
-                    self.execute(conn, data, record_cnt, sql, do_nothing)
-                record_cnt = 0
-                data = []
-                unique_list = []
-
-        if record_cnt > 0:
-            if (random.randint(1, 100) <= self.update_freq):
-                resolve_it = """
-                ON CONFLICT (acct_num) DO UPDATE SET
-                    street = excluded.street,
-                    zip = excluded.zip,
-                    lat = excluded.lat,
-                    lng = excluded.lng
-                """
-                self.execute(conn, data, record_cnt, sql, resolve_it)
-            else:
-                do_nothing = "ON CONFLICT DO NOTHING"
-                self.execute(conn, data, record_cnt, sql, do_nothing)
+            if addr_cnt >= self.batch_size:
+                self.flush_address(conn, addr_data, addr_cnt, addr_sql)
+                addr_cnt = 0
+                addr_data = []
+                unique_addr = []
 
 
-
-    def city_loc(self, conn: psycopg.Connection):
-        # print(f"id: {self.id} and counter: {self.counter} CITY_LOC called")
-
-        sql = """
-        INSERT INTO city_loc (
-            zip, city, state, city_pop
-        )
-        """
-
-        record_cnt = 0
-        data = []
-        unique_list = []
-        for record in self.records:
+            # CITY LOCATION
             zip = record[Field.zip.value]
-            if zip in unique_list:
-                continue
-            else:
-                unique_list.append(zip)
+            if zip in unique_city:
+                self.flush_city_loc(conn, city_data, city_cnt, city_sql)
+                city_cnt = 0
+                city_data = []
+                unique_city = []
 
-            record_cnt += 1
-            data += [
+            unique_city.append(zip)
+            city_cnt += 1
+            city_data += [
                 zip,
                 record[Field.city.value],
                 record[Field.state.value],
                 record[Field.city_pop.value]
             ]
 
-            if record_cnt >= self.batch_size:
-                if (random.randint(1, 100) <= self.update_freq):
-                    resolve_it = """
-                    ON CONFLICT (zip) DO UPDATE SET
-                        city = excluded.city,
-                        state = excluded.state,
-                        city_pop = excluded.city_pop
-                    """
-                    self.execute(conn, data, record_cnt, sql, resolve_it)
-                else:
-                    do_nothing = "ON CONFLICT DO NOTHING"
-                    self.execute(conn, data, record_cnt, sql, do_nothing)
-                record_cnt = 0
-                data = []
-                unique_list = []
-
-        if record_cnt > 0:
-            if (random.randint(1, 100) <= self.update_freq):
-                resolve_it = """
-                ON CONFLICT (zip) DO UPDATE SET
-                    city = excluded.city,
-                    state = excluded.state,
-                    city_pop = excluded.city_pop
-                """
-                self.execute(conn, data, record_cnt, sql, resolve_it)
-            else:
-                do_nothing = "ON CONFLICT DO NOTHING"
-                self.execute(conn, data, record_cnt, sql, do_nothing)
+            if city_cnt >= self.batch_size:
+                self.flush_city_loc(conn, city_data, city_cnt, city_sql)
+                city_cnt = 0
+                city_data = []
+                unique_city = []
 
 
-
-    def customer(self, conn: psycopg.Connection):
-        # print(f"id: {self.id} and counter: {self.counter} CUSTOMER called")
-
-        sql = """
-        INSERT INTO customer (
-            ssn, cc_num, first, last, gender, job, dob, acct_num, profile
-        )
-        """
-
-        record_cnt = 0
-        data = []
-        unique_list = []
-        for record in self.records:
+            # CUSTOMER
             ssn = record[Field.ssn.value]
-            if ssn in unique_list:
-                continue
-            else:
-                unique_list.append(ssn)
+            if ssn in unique_cust:
+                self.flush_customer(conn, cust_data, cust_cnt, cust_sql)
+                cust_cnt = 0
+                cust_data = []
+                unique_cust = []
 
-            record_cnt += 1
-            data += [
+            unique_cust.append(ssn)
+            cust_cnt += 1
+            cust_data += [
                 ssn,
                 record[Field.cc_num.value],
                 record[Field.first.value],
@@ -287,117 +326,36 @@ class Transactionmac:
                 record[Field.profile.value]
             ]
 
-            if record_cnt >= self.batch_size:
-                if (random.randint(1, 100) <= self.update_freq):
-                    resolve_it = """
-                    ON CONFLICT (ssn) DO UPDATE SET
-                        cc_num = excluded.cc_num,
-                        first = excluded.first,
-                        last = excluded.last,
-                        gender = excluded.gender,
-                        job = excluded.job,
-                        dob = excluded.dob,
-                        acct_num = excluded.acct_num,
-                        profile = excluded.profile
-                    """
-                    self.execute(conn, data, record_cnt, sql, resolve_it)
-                else:
-                    do_nothing = "ON CONFLICT DO NOTHING"
-                    self.execute(conn, data, record_cnt, sql, do_nothing)
-                record_cnt = 0
-                data = []
-                unique_list = []
+            if cust_cnt >= self.batch_size:
+                self.flush_customer(conn, cust_data, cust_cnt, cust_sql)
+                cust_cnt = 0
+                cust_data = []
+                unique_cust = []
 
-        if record_cnt > 0:
-            if (random.randint(1, 100) <= self.update_freq):
-                resolve_it = """
-                ON CONFLICT (ssn) DO UPDATE SET
-                    cc_num = excluded.cc_num,
-                    first = excluded.first,
-                    last = excluded.last,
-                    gender = excluded.gender,
-                    job = excluded.job,
-                    dob = excluded.dob,
-                    acct_num = excluded.acct_num,
-                    profile = excluded.profile
-                """
-                self.execute(conn, data, record_cnt, sql, resolve_it)
-            else:
-                do_nothing = "ON CONFLICT DO NOTHING"
-                self.execute(conn, data, record_cnt, sql, do_nothing)
-
-
-
-    def merchant(self, conn: psycopg.Connection):
-        # print(f"id: {self.id} and counter: {self.counter} MERCHANT called")
-
-        sql = """
-        INSERT INTO merchant (
-            id, merchant, merch_lat, merch_lng
-        )
-        """
-
-        record_cnt = 0
-        data = []
-        unique_list = []
-        for record in self.records:
+            # MERCHANT
             id = record[Field.merch_id.value]
-            if id in unique_list:
-                continue
-            else:
-                unique_list.append(id)
+            if id in unique_merc:
+                self.flush_merchant(conn, merc_data, merc_cnt, merc_sql)
+                merc_cnt = 0
+                merc_data = []
+                unique_merc = []
 
-            record_cnt += 1
-            data += [
+            unique_merc.append(id)
+            merc_cnt += 1
+            merc_data += [
                 id,
                 record[Field.merchant.value],
                 record[Field.merch_lat.value],
                 record[Field.merch_lng.value]
             ]
 
-            if record_cnt >= self.batch_size:
-                if (random.randint(1, 100) <= self.update_freq):
-                    resolve_it = """
-                    ON CONFLICT (id) DO UPDATE SET
-                        merchant = excluded.merchant,
-                        merch_lat = excluded.merch_lat,
-                        merch_lng = excluded.merch_lng
-                    """
-                    self.execute(conn, data, record_cnt, sql, resolve_it)
-                else:
-                    do_nothing = "ON CONFLICT DO NOTHING"
-                    self.execute(conn, data, record_cnt, sql, do_nothing)
-                record_cnt = 0
-                data = []
-                unique_list = []
+            if merc_cnt >= self.batch_size:
+                self.flush_merchant(conn, merc_data, merc_cnt, merc_sql)
+                merc_cnt = 0
+                merc_data = []
+                unique_merc = []
 
-        if record_cnt > 0:
-            if (random.randint(1, 100) <= self.update_freq):
-                resolve_it = """
-                ON CONFLICT (id) DO UPDATE SET
-                    merchant = excluded.merchant,
-                    merch_lat = excluded.merch_lat,
-                    merch_lng = excluded.merch_lng
-                """
-                self.execute(conn, data, record_cnt, sql, resolve_it)
-            else:
-                do_nothing = "ON CONFLICT DO NOTHING"
-                self.execute(conn, data, record_cnt, sql, do_nothing)
-
-
-
-    def transaction(self, conn: psycopg.Connection):
-        # print(f"id: {self.id} and counter: {self.counter} TRANSACTION called")
-
-        sql = """
-        INSERT INTO transaction (
-            cc_num, trans_num, trans_date, trans_time, unix_time, category, merch_id, amt, is_fraud
-        )
-        """
-
-        record_cnt = 0
-        data = []
-        for record in self.records:
+            # TRANSACTION
             record_cnt += 1
             data += [
                 record[Field.cc_num.value],
@@ -415,7 +373,19 @@ class Transactionmac:
                 self.execute(conn, data, record_cnt, sql, "")
                 record_cnt = 0
                 data = []
-                unique_list = []
+
+
+        if addr_cnt > 0:
+            self.flush_address(conn, addr_data, addr_cnt, addr_sql)
+
+        if city_cnt > 0:
+            self.flush_city_loc(conn, city_data, city_cnt, city_sql)
+
+        if cust_cnt > 0:
+            self.flush_customer(conn, cust_data, cust_cnt, cust_sql)
+
+        if merc_cnt > 0:
+            self.flush_merchant(conn, merc_data, merc_cnt, merc_sql)
 
         if record_cnt > 0:
             self.execute(conn, data, record_cnt, sql, "")
