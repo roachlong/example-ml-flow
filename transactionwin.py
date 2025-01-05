@@ -4,6 +4,7 @@ from enum import Enum
 import os
 import psycopg
 import random
+import shutil
 import subprocess
 import time
 import uuid
@@ -38,7 +39,7 @@ class Field(Enum):
     merch_id = 26
 
 
-class Transaction:
+class Transactionwin:
 
     def __init__(self, args: dict):
         # args is a dict of string passed with the --args flag
@@ -48,9 +49,9 @@ class Transaction:
         self.batch_size: int = int(args.get("batch_size", 128))
         self.update_freq: int = int(args.get("update_freq", 10))
         self.generator_location: string = str(args.get("generator_location",
-            f"{os.environ['HOME']}/workspace/example-ml-flow/Sparkov_Data_Generation"))
+            f"{os.environ['USERPROFILE']}/workspace/example-ml-flow/Sparkov_Data_Generation"))
         self.data_folder: string = str(args.get("data_folder",
-            f"{os.environ['HOME']}/workspace/example-ml-flow/data/generated"))
+            f"{os.environ['USERPROFILE']}/workspace/example-ml-flow/data/generated"))
 
         # you can arbitrarely add any variables you want
         self.counter: int = 0
@@ -75,14 +76,11 @@ class Transaction:
     # Once every func has been executed, run() is re-evaluated.
     # This process continues until dbworkload exits.
     def loop(self):
-        command = [
-            "rm",
-            "-rf",
-            f"{self.data_folder}/{self.id}"
-        ]
-        # print(f"executing command: {command}")
-        subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
+        try:
+            shutil.rmtree(f"{self.data_folder}\\{self.id}")
+        except FileNotFoundError:
+            print("ignoring FileNotFoundError during rmtree command")
+        
         start_days_ahead = (self.days * self.counter) + 1
         start_date=datetime.datetime.now() + timedelta(days=start_days_ahead)
         end_date=start_date + timedelta(days=self.days)
