@@ -134,7 +134,7 @@ class Transactionwin:
 
 
 
-    def flush_address(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+    def flush_address(self, conn: psycopg.Connection, data, record_cnt, sql):
         # print(f"id: {self.id} and counter: {self.counter} FLUSH_ADDRESS called")
         if (random.randint(1, 100) <= self.update_freq):
             resolve_it = """
@@ -151,7 +151,7 @@ class Transactionwin:
 
 
 
-    def flush_city_loc(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+    def flush_city_loc(self, conn: psycopg.Connection, data, record_cnt, sql):
         # print(f"id: {self.id} and counter: {self.counter} FLUSH_CITY_LOC called")
         if (random.randint(1, 100) <= self.update_freq):
             resolve_it = """
@@ -167,7 +167,7 @@ class Transactionwin:
 
 
 
-    def flush_customer(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+    def flush_customer(self, conn: psycopg.Connection, data, record_cnt, sql):
         # print(f"id: {self.id} and counter: {self.counter} FLUSH_CUSTOMER called")
         if (random.randint(1, 100) <= self.update_freq):
             resolve_it = """
@@ -188,7 +188,7 @@ class Transactionwin:
 
 
 
-    def flush_merchant(self, conn: psycopg.Connection, data, record_cnt, ins_sql):
+    def flush_merchant(self, conn: psycopg.Connection, data, record_cnt, sql):
         # print(f"id: {self.id} and counter: {self.counter} FLUSH_MERCHANT called")
         if (random.randint(1, 100) <= self.update_freq):
             resolve_it = """
