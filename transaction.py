@@ -47,10 +47,16 @@ class Transaction:
         self.days: int = int(args.get("days", 10))
         self.batch_size: int = int(args.get("batch_size", 128))
         self.update_freq: int = int(args.get("update_freq", 10))
-        self.generator_location: string = str(args.get("generator_location",
-            f"{os.environ['HOME']}/workspace/Sparkov_Data_Generation"))
-        self.data_folder: string = str(args.get("data_folder",
-            f"{os.environ['HOME']}/workspace/cockroachdb-starter/payments-ml-flow/data"))
+        try:
+            self.generator_location: string = str(args.get("generator_location",
+                f"{os.environ['HOME']}/workspace/example-ml-flow/Sparkov_Data_Generation"))
+            self.data_folder: string = str(args.get("data_folder",
+                f"{os.environ['HOME']}/workspace/example-ml-flow/data/generated"))
+        except KeyError:
+            self.generator_location: string = str(args.get("generator_location",
+                f"{os.environ['USERPROFILE']}/workspace/example-ml-flow/Sparkov_Data_Generation"))
+            self.data_folder: string = str(args.get("data_folder",
+                f"{os.environ['USERPROFILE']}/workspace/example-ml-flow/data/generated"))
 
         # you can arbitrarely add any variables you want
         self.counter: int = 0
