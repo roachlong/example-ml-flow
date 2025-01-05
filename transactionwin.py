@@ -39,7 +39,7 @@ class Field(Enum):
     merch_id = 26
 
 
-class Transaction:
+class Transactionwin:
 
     def __init__(self, args: dict):
         # args is a dict of string passed with the --args flag
