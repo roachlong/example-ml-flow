@@ -76,7 +76,11 @@ class Transactionwin:
     # Once every func has been executed, run() is re-evaluated.
     # This process continues until dbworkload exits.
     def loop(self):
-        shutil.rmtree(f"{self.data_folder}\\{self.id}")
+        try:
+            shutil.rmtree(f"{self.data_folder}\\{self.id}")
+        except FileNotFoundError:
+            print("ignoring FileNotFoundError during rmtree command")
+        
         start_days_ahead = (self.days * self.counter) + 1
         start_date=datetime.datetime.now() + timedelta(days=start_days_ahead)
         end_date=start_date + timedelta(days=self.days)
